@@ -51,7 +51,7 @@ en:
 	pop edi
 	pop esi
 	pop ebp
-	ret 4
+	ret
 bla endp
 
 slength proc
