@@ -3,25 +3,83 @@ include \Irvine\Irvine32.inc
 
 BufSize = 256
 .data
-buffer BYTE BufSize DUP(?),0,0
-stdInHandle HANDLE ?
-bytesRead DWORD ?
+	msg1 byte "First name: ",0
+	firstName byte 30 dup (0)
+	msg2 byte "Last name: ",0
+	lastName byte 30 dup (0)
+	msg3 byte "Age: ",0
+	age byte 3 dup (0)
+	msg4 byte "Phone number: ",0
+	pNumber byte 11 dup (0)
+	msg5 byte "Your information: ",0
+	fileName byte "Binggo.txt",0
+	buf byte BufSize dup (?),0,0
 .code
 main PROC
-	push offset buffer
-	push BufSize
-	call bla
+	invoke SetConsoleTitle, addr fileName
+	comment ?
+	push offset msg1
+	call writeS
+	push offset firstName
+	push lengthof firstName
+	call ReadS
 
-	mov esi,OFFSET buffer
-	mov ecx,eax
-	inc ecx
-	mov ebx,TYPE buffer
-	call DumpMem
+	push offset msg2
+	call writeS
+	push offset lastName
+	push lengthof lastName
+	call ReadS
+
+	push offset msg3
+	call writeS
+	push offset age
+	push lengthof age
+	call ReadS
+
+	push offset msg4
+	call writeS
+	push offset pNumber
+	push lengthof pNumber
+	call ReadS
+
+	;
+
+	push offset msg5
+	call WriteS
+
+	call Crlf
+	push offset firstName
+	call WriteS
+	call Crlf
+	push offset lastName
+	call WriteS
+	call Crlf
+	push offset age
+	call WriteS
+	call Crlf
+	push offset pNumber
+	call WriteS
+	
+	mov edx,offset fileName
+	call createOutputF
+	mov edx,offset msg1
+	mov ecx,lengthof msg1 
+	call writef
+	?
+
+	mov edx,offset fileName
+	call OpenF
+	mov edx, offset buf
+	mov ecx,BufSize
+	call readF
+	mov edx,offset buf
+	call WriteString
+	call Crlf
 	call WaitMsg
 	exit
 main ENDP
 
-bla proc
+readS proc
 .data
 	string equ dword ptr [ebp+12]
 	len equ dword ptr [ebp+8]
@@ -46,5 +104,70 @@ bla proc
 	add esp,8
 	pop ebp
 	ret 8
-bla endp
+readS endp
+
+writeS proc
+.data
+	string equ dword ptr [ebp+8]
+	len equ dword ptr [ebp-4]
+	stdout equ dword ptr [ebp-8]
+.code
+	push ebp
+	mov ebp,esp
+	sub esp,8
+	mov al,0
+	mov edi,string
+	cld
+l1:
+	scasb
+	jz write
+	jmp l1
+write:
+	sub edi,string
+	dec edi
+	mov len,edi
+	push STD_OUTPUT_HANDLE
+	call GetStdHandle
+	mov stdout, eax
+	mov eax,ebp
+	sub eax,4
+	invoke WriteConsole, stdout, string, len, eax, 0   
+	add esp,8
+	pop ebp
+	ret 4
+writeS endp
+
+createOutputF proc
+;receive edx point to the file name
+.data
+.code
+	invoke CreateFile, edx, GENERIC_WRITE, DO_NOT_SHARE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0
+	ret
+createOutputF endp
+openF proc
+;open a new text file and open for input
+.data
+.code
+	invoke CreateFile, edx, GENERIC_READ, DO_NOT_SHARE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,0
+	ret
+openF endp
+
+writeF proc
+.data
+	writetof dword ?
+.code
+	invoke WriteFile, eax, edx, ecx, addr writetof, 0
+	mov eax, writetof
+	ret
+writeF endp
+
+readF proc
+.data
+	readfromf dword ?
+.code
+	invoke ReadFile, eax, edx, ecx, addr readfromf, 0
+	mov eax, readfromf
+	ret
+readF endp
+
 END main
