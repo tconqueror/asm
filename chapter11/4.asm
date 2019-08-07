@@ -17,7 +17,7 @@ main PROC
 	mul consoleinfor.dwSize.Y
 	mov ecx,eax
 	;push ecx
-	shr ecx,1
+	shl ecx,2
 	push ecx
 l1:
 	push ecx
