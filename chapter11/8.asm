@@ -3,10 +3,12 @@ include Irvine32.inc
 .data
 	xypos coord <0,0>
 	stdout handle ?
+	consoleinfo CONSOLE_SCREEN_BUFFER_INFO <>
 .code
 main proc
 	invoke GetStdHandle, STD_OUTPUT_HANDLE
 	mov stdout, eax
+	invoke GetConsoleScreenBufferInfo, stdout, addr consoleinfo
 l1:
 	call bla
 	jmp l1
@@ -14,11 +16,13 @@ l1:
 main endp
 bla proc
 	pushad
-	mov eax, 25
+	movzx eax, consoleinfo.srWindow.Right
+	inc eax
 	call RandomRange
 	mov xypos.X, ax
 
-	mov eax, 80
+	movzx eax, consoleinfo.srWindow.Bottom
+	inc eax
 	call RandomRange
 	mov xypos.Y, ax
 	invoke SetConsoleCursorPosition, stdout, xypos
