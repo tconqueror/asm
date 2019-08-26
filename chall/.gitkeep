@@ -1,1 +1,22 @@
-
+section .data
+	buf byte 100 dup (0)
+section .bss
+	len resb 100
+section .text
+	global _start
+_start:	
+	mov eax,3
+	mov ebx,2
+	mov ecx,buf
+	mov edx,len
+	int 0x80
+	
+	mov eax,4
+	mov ebx,1
+	mov ecx,buf
+	mov edx,len
+	int 0x80
+en:
+	mov eax,1
+	mov ebx,0 
+	int 0x80
