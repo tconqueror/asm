@@ -826,7 +826,6 @@ contiOS:
 	cmp eax,1
 	je solve32
 solve64:
-	jmp SOPH
 solve32:
 	push msgEP
 	push lenEP
@@ -837,9 +836,102 @@ solve32:
 	call pHex
 	call newl
 	;-------------------------
-SOPH:
-	
-
+SOPH32:
+	push msgProgramHeader
+	push lenProGramHeader
+	call print
+	;
+	mov ebx, dword [TempBuf]
+	add ebx, 0x1C
+	push dword [ebx]
+	call pDec
+	call newl
+SOSH32:
+	push msgSectionHeader
+	push lenSectionHeader
+	call print
+	;
+	mov ebx, dword [TempBuf]
+	add ebx, 0x20
+	push dword [ebx]
+	call pDec
+	call newl
+F32:
+	push msgFlags
+	push lenFlags
+	call print
+	;
+	mov ebx, dword [TempBuf]
+	add ebx, 0x24
+	push dword [ebx]
+	call pDec
+	call newl
+SzOTH32:
+	push msgSizeOfThisHeader
+	push lenSizeOfThisHeader
+	call print
+	;
+	mov ebx,dword [TempBuf]
+	add ebx, 0x28
+	movzx ebx, word [ebx]
+	push ebx
+	call pDec
+	call newl
+SzOPH32:
+	push msgSizeOfProgramHeader
+	push lenSizeOfProgramHeader
+	call print
+	;
+	mov ebx, dword [TempBuf]
+	add ebx, 0x2A
+	movzx ebx, word [ebx]
+	push ebx
+	call pDec
+	call newl
+	jmp NOPH32
+NOPH32:
+	push msgNumberOfProgramHeader
+	push lenNumberOfProgramHeader
+	call print
+	;
+	mov ebx, dword [TempBuf]
+	add ebx, 0x2C
+	movzx ebx, word [ebx]
+	push ebx
+	call pDec
+	call newl
+SzOSH32:
+	push msgSizeOfSectionHeader
+	push lenSizeOfSectionHeader
+	call print
+	;
+	mov ebx, dword [TempBuf]
+	add ebx, 0x2e
+	movzx ebx, word [ebx]
+	push ebx
+	call pDec
+	call newl
+NOSH32:
+	push msgNumberOfSectionHeader
+	push lenNumberOfSectionHeader
+	call print
+	mov ebx, dword [TempBuf]
+	add ebx, 0x30
+	movzx ebx, word [ebx]
+	push ebx
+	call pDec
+	call newl
+SHSTI32:
+	push msgSectionHeaderStringTableIndex
+	push lenSectionHeaderStringTableIndex
+	call print
+	;
+	mov ebx, dword [TempBuf]
+	add ebx, 0x32
+	movzx ebx, word [ebx]
+	push ebx
+	call pDec
+	call newl
 	;~ close file
 	mov		ebx, esi 
 	mov		eax, sys_close
