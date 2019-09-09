@@ -79,7 +79,7 @@ lenMAchine equ $-msgMachine
 msgABIVersion db "    ABI Version: ",0
 lenABIVersion equ $-msgABIVersion
 
-msgEP db "    Entry point address: ",0
+msgEP db "    Entry point address: 0x",0
 lenEP equ $-msgEP
 
 msgProgramHeader db "    Start of program headers: ",0
@@ -181,6 +181,7 @@ ValType db "NONE",0,"REL",0,"EXEC",0,"DYN",0,"CORE",0,"LOOS",0,"HIOS",0,"LOPROC"
 KeyMachine dw 0,2,3,8,0x14,0x16,0x28,0x2a,0x32,0x3e,0xb7,0xf3,0
 ValMachine db "No Specific Instruction Set",0,"SPARC",0,"x86",0,"MIPS",0,"PowerPC",0,"S390",0,"ARM",0,"SuperH",0,"IA-64",0,"x86-64",0,"AArch64",0,"RISC-V",0
 
+
 SECTION     .bss
 stat		resb	sizeof(STAT)
 Org_Break   resd    1
@@ -237,37 +238,6 @@ nSpc:
 	pop eax
 	pop ebp
 	ret
-;------------------------------
-showReverseHex:
-	;offset - soluong 
-	push ebp
-	mov ebp,esp
-	pushad
-	mov ecx, dword [ebp+8]; soluong
-	mov esi, dword [ebp+12]; offset
-	cld
-l1:
-	xor eax,eax
-	xor edx,edx
-	lodsb
-	mov ebx,16
-	div bl
-	movzx ebx,al
-	add ebx,hex
-	mov bl,byte [ebx]
-	mov byte [temp],bl
-	
-	movzx ebx,ah
-	add ebx,hex
-	mov bl,byte [ebx]
-	mov byte [temp+1],bl
-	push temp
-	push 2 
-	call print
-	loop l1
-	popad
-	pop ebp
-	ret 8
 ;---------------------------------
 showHexP:
 	;offset - soluong 
@@ -339,6 +309,52 @@ pDec:
 	mov edx,dword [tmp]
 	int 0x80
 .end:
+	pop edi
+	pop esi
+	pop edx
+	pop ecx
+	pop ebx
+	pop eax
+	pop ebp
+	ret 4
+;---------------------------------
+pHex:
+	push ebp
+	mov ebp,esp
+	push eax
+	push ebx
+	push ecx
+	push edx
+	push esi
+	push edi
+	mov eax, dword [ebp+8]
+	xor ebx,ebx
+	mov edi,temp
+	cld
+.hpush_char:
+	xor edx,edx
+	mov ecx,16
+	div ecx
+	add edx,hex
+	movzx edx,byte [edx] 
+	push edx
+	inc ebx
+	test eax,eax
+	jnz .hpush_char
+	mov dword [tmp], ebx
+.hpop_char:
+	pop eax
+	stosb
+	dec ebx
+	test ebx,ebx
+	jnz .hpop_char
+.hprint:
+	mov eax,4
+	mov ebx,1
+	mov ecx,temp
+	mov edx,dword [tmp]
+	int 0x80
+.hend:
 	pop edi
 	pop esi
 	pop edx
@@ -803,21 +819,26 @@ contiOS:
 
 	call newl
 	;--------------------------
-	entrypoint adress ->end
+	;entrypoint adress ->end
 	mov ebx,dword  [TempBuf]
 	add ebx,4
 	movzx eax,byte [ebx]
 	cmp eax,1
 	je solve32
 solve64:
-	;jmp Exit
+	jmp SOPH
 solve32:
 	push msgEP
 	push lenEP
 	call print
 	mov ebx, dword [TempBuf]
 	add ebx, 0x18
-	;
+	push dword [ebx]
+	call pHex
+	call newl
+	;-------------------------
+SOPH:
+	
 
 	;~ close file
 	mov		ebx, esi 
