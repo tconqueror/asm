@@ -10,7 +10,7 @@ BUFFER_SIZE = 5000
 
 .data
 buf BYTE 5000 DUP(?)
-filename    byte "bla.txt",0;BYTE 80 DUP(0)
+filename    byte "Overlong.exe",0;BYTE 80 DUP(0)
 fileHandle  HANDLE ?
 stdout handle ?
 byteWritten dword 0
@@ -34,10 +34,23 @@ main PROC
 	jne	file_ok					; no: skip
 	mWrite <"Cannot open file",0dh,0ah>
 	jmp	quit						; and quit
+	
 file_ok:
+	mWrite <"Checking...",0dh,0ah>
+	push 0
+	push 2
+	call getBuf
+	movzx eax, word ptr [buf]
+	;call WriteDec
+	cmp eax, 23117
+	jnz notpe
+	mWrite <"Yes! It's PE file",0dh,0ah>
 	push 5 
 	push 10 
 	call showBuf
+	jmp close_file
+notpe:
+	mWrite <"It's not PE file",0dh,0ah>
 close_file:
 	mov	eax,fileHandle
 	call	CloseFile
