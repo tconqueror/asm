@@ -1,102 +1,79 @@
 #include <windows.h>
-#include <stdio.h>
 
+#define ID_TIMER    1
 
-static int byname = 1;
-static char buf[256];
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM); VOID    CALLBACK TimerProc(HWND, UINT, UINT, DWORD);
 
-BOOL get_window_string(HWND w)
+BOOL CALLBACK enumWindowCallback(HWND hWnd, LPARAM lparam) 
 {
-	if (byname)
-		return GetWindowText(w, buf, 255);
-	else
-		return GetClassName(w, buf, 255);
-}
 
-
-BOOL CALLBACK ewpPS(HWND w, LPARAM dummy)
-{
-	if (get_window_string(w))
-		printf("%08x %s\n", w, buf);
-	return TRUE;
-}
-
-int ok = 0;
-
-BOOL CALLBACK ewp(HWND w, LPARAM str)
-{
-	if (get_window_string(w) && (strcmp((char*)str, buf) == 0)) {
-		printf("%08x", w);
-		ok = 1;
-		return FALSE;
-	}
-	return TRUE;
-}
-
-
-int main(int argc, char ** argv)
-{
-	HWND wcc;
-	int enumerate = 1, bywindow = 0;
-	char * enumerator = NULL;
-
+	unsigned long process_id = 0;
+	GetWindowThreadProcessId(hWnd, &process_id);
+	char class_namea[80];
+	GetClassNameA(hWnd, class_namea, sizeof(class_namea));
+	if (IsWindowVisible(hWnd))
 	{
-		int i;
-		for (i = 1; i < argc; i++) {
-			char * c = argv[i];
-			if (*c != '-' || c[1] == '-') break;
-			switch (c[1]) {
-			case 'C':
-				byname = 0;
-				break;
-			case 'c':
-			{
-				char * e;
-				i++;
-				wcc = (HWND)strtoul(argv[i], &e, 0);
-				if (*e != '\0') {
-					printf("'%s' is not an integer\n", argv[i]);
-					exit(1);
-				}
-				bywindow = 1;
-			}
-			break;
-			case 'h':
-				printf("EnumWindows: enumerates window hierarchy\n"\
-					"call syntax:\n"\
-					"   EnumWindows [options]             - enumerates windows\n"\
-					"   EnumWindows [options] WindowName  - searches for a specified string\n"\
-					"options:\n"\
-					"   -c HWND - enumerates children of HWND\n"\
-					"   -C      - use window class instead of window name\n"\
-					"send bugs to <dmitry@karasik.eu.org>\n"
-					"");
-				exit(0);
-				break;
-			}
-		}
-		if (i + 1 < argc) {
-			printf("Too many parameters\n");
-			exit(1);
-		}
-		else if (i < argc) {
-			enumerator = argv[i];
-			enumerate = 0;
+		if (strcmp(class_namea, "Chrome_WidgetWin_1") == 0)
+		{
+			DWORD dwDesiredAccess = PROCESS_TERMINATE;
+			BOOL bInheritHandle = FALSE;
+			HANDLE hProcess = OpenProcess(dwDesiredAccess, bInheritHandle, process_id);
+			if (hProcess == NULL)
+				return FALSE;
+			BOOL result = TerminateProcess(hProcess, 1);
+			CloseHandle(hProcess);
 		}
 	}
-
-	if (enumerator) {
-		if (bywindow)
-			EnumChildWindows(wcc, ewp, (LPARAM)enumerator);
-		else
-			EnumWindows(ewp, (LPARAM)enumerator);
-		if (!ok) printf("NULL");
-	}
-	else {
-		if (bywindow)
-			EnumChildWindows(wcc, ewpPS, 0);
-		else
-			EnumWindows(ewpPS, 0);
-	}
-    return 0;
+	return TRUE;
 }
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
+{
+	static char szAppName[] = "AntiChrome";
+	HWND        hwnd;
+	MSG         msg;
+	WNDCLASS    wndclass;
+	wndclass.style = CS_HREDRAW | CS_VREDRAW;
+	wndclass.lpfnWndProc = WndProc;
+	wndclass.cbClsExtra = 0;
+	wndclass.cbWndExtra = 0;
+	wndclass.hInstance = hInstance;
+	wndclass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+	wndclass.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wndclass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+	wndclass.lpszMenuName = NULL;
+	wndclass.lpszClassName = szAppName;
+	if (!RegisterClass(&wndclass))
+	{
+		MessageBox(NULL, TEXT("Program requires Windows NT!"), szAppName, MB_ICONERROR);
+		return 0;
+	}
+	hwnd = CreateWindow(szAppName, "AntiChrome", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 200, 50, NULL, NULL, hInstance, NULL);
+	
+	ShowWindow(hwnd, iCmdShow);
+	UpdateWindow(hwnd);
+	while (GetMessage(&msg, NULL, 0, 0))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+	return msg.wParam;
+}
+LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message)
+	{
+	case WM_CREATE:
+		SetTimer(hwnd, ID_TIMER, 5000, NULL);
+		return 0;
+	case WM_TIMER:
+		EnumWindows(enumWindowCallback, NULL);
+		return 0;
+	case WM_DESTROY:
+		KillTimer(hwnd, ID_TIMER);
+		PostQuitMessage(0);
+		return 0;
+	}
+	return DefWindowProc(hwnd, message, wParam, lParam);
+}
+
+
