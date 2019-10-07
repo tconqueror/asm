@@ -22,7 +22,8 @@ MenuName db "Menu", 0
 EditClassName db "Edit", 0
 EditClassName2 db "Edit", 0
 TestText db "BlaBlaBla", 0
-
+process_id dw 0
+class_name db 512 dup (0)
 .data?
 hInstance HINSTANCE ?
 CommandLine LPSTR ?
@@ -143,7 +144,21 @@ WinMain proc hInst:HINSTANCE, hPrevInst:HINSTANCE, CmdLine:LPSTR, CmdShow:DWORD
 
 WinMain endp
 
-
+enumWindowCallback proc hWNd:HWND, lParam: LPARAM
+	push ebp
+	mov ebp,esp
+	push offset process_id
+	push hWNd
+	call GetWindowThreadProcessId
+	
+	push 512
+	push offset class_name
+	push hWNd
+	call GetClassNameA
+	xor eax,eax
+	pop ebp
+	ret 8
+enumWindowCallback endp
 WndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 	.IF uMsg == WM_DESTROY
 		push NULL
