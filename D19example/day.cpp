@@ -58,4 +58,3 @@
     printf("\nNgay mai la %d/%d/%d",next_day,next_month,next_year);
     return 0;
 }
-//
